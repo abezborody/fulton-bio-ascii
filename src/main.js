@@ -66,8 +66,9 @@ const params = {
   positionY: 0,
   positionZ: 0,
   autoRotate: true,
-  rotationSpeed: 0.001,
+  rotationSpeed: 0.007,
   backgroundColor: '#ffffff',
+  modelColor: '#000000',
   brightness: 0.5,
   contrast: 1.0,
   asciiEnabled: true,
@@ -75,7 +76,10 @@ const params = {
   asciiFontSize: 22,
   asciiCharSet: ' .:-=+*#%@',
   fps: 0,
-  subdivisionIterations: 1
+  circleRadius: 0.1,
+  circleSpeed: Math.PI * 2 /8, // 1 full rotation per second
+  circleEnabled: true,
+  subdivisionIterations: 1,
 }
 
 // Create Tweakpane
@@ -96,10 +100,14 @@ pane.addBinding(params, 'brightness', { min: 0, max: 2, step: 0.1, label: 'Brigh
 pane.addBinding(params, 'contrast', { min: 0.1, max: 3, step: 0.1, label: 'Contrast' })
 
 // ASCII Effect controls
-pane.addBinding(params, 'asciiEnabled', { label: 'ASCII Effect' })
-pane.addBinding(params, 'asciiResolution', { min: 0.05, max: 0.5, step: 0.01, label: 'ASCII Resolution' })
+// pane.addBinding(params, 'asciiEnabled', { label: 'ASCII Effect' })
+// pane.addBinding(params, 'asciiResolution', { min: 0.05, max: 0.5, step: 0.01, label: 'ASCII Resolution' })
 pane.addBinding(params, 'asciiFontSize', { min: 8, max: 30, step: 1, label: 'ASCII Font Size' })
 pane.addBinding(params, 'asciiCharSet', { label: 'ASCII Character Set' })
+
+// Add circular animation controls
+pane.addBinding(params, 'circleEnabled', { label: 'Circle Animation' })
+pane.addBinding(params, 'circleRadius', { min: 0.5, max: 5, step: 0.1, label: 'Circle Radius' })
 
 // Add subdivision control
 pane.addBinding(params, 'subdivisionIterations', { min: 0, max: 3, step: 1, label: 'Subdivision' })
@@ -140,7 +148,7 @@ pane.on('change', (ev) => {
 
 // Load the model
 loader.load(
-  './cell-2.glb',
+  './cell.glb.txt',
   (gltf) => {
     console.log('Model loaded successfully:', gltf)
     model = gltf.scene
@@ -231,7 +239,7 @@ function renderASCII() {
   gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels)
   
   // Clear 2D canvas with white background
-  asciiCtx.fillStyle = '#ffffff'
+  asciiCtx.fillStyle = `${params.backgroundColor}`
   asciiCtx.fillRect(0, 0, asciiCanvas.width, asciiCanvas.height)
   
   // Set font with black color
@@ -278,6 +286,8 @@ function renderASCII() {
 let lastTime = performance.now()
 let frameCount = 0
 
+let circleTime = 0
+
 // Animation loop
 function animate() {
   requestAnimationFrame(animate)
@@ -296,6 +306,15 @@ function animate() {
   // Auto-rotate if enabled
   if (params.autoRotate) {
     scene.rotation.y += params.rotationSpeed
+  }
+  
+  // Circular movement animation
+  if (params.circleEnabled && model) {
+    circleTime += 0.016 // ~60fps
+    const angle = circleTime * params.circleSpeed
+    // Counter-clockwise circular motion
+    model.position.x = params.positionX + Math.cos(angle) * params.circleRadius /2
+    model.position.y = params.positionZ + Math.sin(angle) * params.circleRadius
   }
   
   // Render 3D scene offscreen
