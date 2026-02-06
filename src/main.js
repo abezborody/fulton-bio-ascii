@@ -15,6 +15,8 @@ camera.position.z = 5
 const renderer = new THREE.WebGLRenderer({ antialias: false, preserveDrawingBuffer: true })
 renderer.setSize(window.innerWidth, window.innerHeight)
 renderer.setPixelRatio(1)
+renderer.shadowMap.enabled = true
+renderer.shadowMap.type = THREE.PCFSoftShadowMap
 
 // 2D ASCII Canvas (visible)
 const asciiCanvas = document.createElement('canvas')
@@ -31,15 +33,25 @@ document.getElementById('app').appendChild(asciiCanvas)
 // ASCII configuration
 const asciiChars = ' .:-=+*#%@1234567890'
 
-// Lighting
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
+// Lighting with enhanced contrast for model details
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.5)
 scene.add(ambientLight)
 
-const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8)
-directionalLight.position.set(10, 10, 5)
-scene.add(directionalLight)
+// Main directional light - high angle to create surface detail shadows
+const mainLight = new THREE.DirectionalLight(0xffffff, 1.5)
+mainLight.position.set(5, 15, 8)
+mainLight.castShadow = false // No floor shadows
+scene.add(mainLight)
 
-// Load GLB model
+// Fill light from side for detail
+const fillLight = new THREE.DirectionalLight(0xffffff, 0.8)
+fillLight.position.set(-8, 5, 3)
+scene.add(fillLight)
+
+// Back light for rim/silhouette
+const backLight = new THREE.DirectionalLight(0xffffff, 0.6)
+backLight.position.set(0, 5, -10)
+scene.add(backLight)
 const loader = new GLTFLoader()
 let model = null
 
@@ -53,13 +65,13 @@ const params = {
   positionY: 0,
   positionZ: 0,
   autoRotate: true,
-  rotationSpeed: 0.002,
+  rotationSpeed: 0.001,
   backgroundColor: '#ffffff',
-  ambientLightIntensity: 0.6,
-  directionalLightIntensity: 0.8,
+  brightness: 0.5,
+  contrast: 1.0,
   asciiEnabled: true,
-  asciiResolution: 0.4,
-  asciiFontSize: 18,
+  asciiResolution: 0.27,
+  asciiFontSize: 22,
   asciiCharSet: ' .:-=+*#%@',
   fps: 0
 }
@@ -78,8 +90,8 @@ pane.addBinding(params, 'positionZ', { min: -5, max: 5, step: 0.1, label: 'Posit
 pane.addBinding(params, 'autoRotate', { label: 'Auto Rotate' })
 pane.addBinding(params, 'rotationSpeed', { min: 0, max: 0.05, step: 0.001, label: 'Rotation Speed' })
 pane.addBinding(params, 'backgroundColor', { view: 'color', label: 'Background' })
-pane.addBinding(params, 'ambientLightIntensity', { min: 0, max: 2, step: 0.1, label: 'Ambient Light' })
-pane.addBinding(params, 'directionalLightIntensity', { min: 0, max: 2, step: 0.1, label: 'Directional Light' })
+pane.addBinding(params, 'brightness', { min: 0, max: 2, step: 0.1, label: 'Brightness' })
+pane.addBinding(params, 'contrast', { min: 0.1, max: 3, step: 0.1, label: 'Contrast' })
 
 // ASCII Effect controls
 pane.addBinding(params, 'asciiEnabled', { label: 'ASCII Effect' })
@@ -112,16 +124,18 @@ pane.on('change', (ev) => {
     model.position.z = params.positionZ
   } else if (key === 'backgroundColor') {
     scene.background = new THREE.Color(params.backgroundColor)
-  } else if (key === 'ambientLightIntensity') {
-    ambientLight.intensity = params.asciiCharSet
-  } else if (key === 'directionalLightIntensity') {
-    directionalLight.intensity = params.directionalLightIntensity
+  } else if (key === 'brightness') {
+    ambientLight.intensity = params.brightness
+  } else if (key === 'contrast') {
+    mainLight.intensity = 1.5 * params.contrast
+    fillLight.intensity = 0.8 * params.contrast
+    backLight.intensity = 0.6 * params.contrast
   }
 })
 
 // Load the model
 loader.load(
-  './covid-19.glb',
+  './cell.glb',
   (gltf) => {
     console.log('Model loaded successfully:', gltf)
     model = gltf.scene
@@ -140,7 +154,13 @@ loader.load(
     // Update initial scale in params
     params.scale = initialScale
     
-    console.log('Model added to scene:', model)
+    // Enable mesh self-shadowing for detail
+    model.traverse((child) => {
+      if (child.isMesh) {
+        child.castShadow = true
+        child.receiveShadow = true
+      }
+    })
   },
   (xhr) => {
     console.log(`${(xhr.loaded / xhr.total * 100).toFixed(2)}% loaded`)
@@ -163,7 +183,13 @@ loader.load(
         const initialScale = 2 / maxDim
         model.scale.multiplyScalar(initialScale)
         
-        params.scale = initialScale
+        // Enable mesh self-shadowing for detail (alternative path)
+        model.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true
+            child.receiveShadow = true
+          }
+        })
       },
       (xhr) => {
         console.log(`${(xhr.loaded / xhr.total * 100).toFixed(2)}% loaded (alternative path)`)
