@@ -2,6 +2,7 @@ import './style.css'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { Pane } from 'tweakpane'
+import { LoopSubdivision } from 'https://unpkg.com/three-subdivide/build/index.module.js'
 
 // Scene setup
 const scene = new THREE.Scene()
@@ -73,7 +74,8 @@ const params = {
   asciiResolution: 0.27,
   asciiFontSize: 22,
   asciiCharSet: ' .:-=+*#%@',
-  fps: 0
+  fps: 0,
+  subdivisionIterations: 1
 }
 
 // Create Tweakpane
@@ -98,6 +100,9 @@ pane.addBinding(params, 'asciiEnabled', { label: 'ASCII Effect' })
 pane.addBinding(params, 'asciiResolution', { min: 0.05, max: 0.5, step: 0.01, label: 'ASCII Resolution' })
 pane.addBinding(params, 'asciiFontSize', { min: 8, max: 30, step: 1, label: 'ASCII Font Size' })
 pane.addBinding(params, 'asciiCharSet', { label: 'ASCII Character Set' })
+
+// Add subdivision control
+pane.addBinding(params, 'subdivisionIterations', { min: 0, max: 3, step: 1, label: 'Subdivision' })
 
 // FPS Monitor
 pane.addBinding(params, 'fps', { label: 'FPS', readonly: true })
@@ -135,7 +140,7 @@ pane.on('change', (ev) => {
 
 // Load the model
 loader.load(
-  './cell.glb',
+  './cell-2.glb',
   (gltf) => {
     console.log('Model loaded successfully:', gltf)
     model = gltf.scene
@@ -154,11 +159,23 @@ loader.load(
     // Update initial scale in params
     params.scale = initialScale
     
-    // Enable mesh self-shadowing for detail
+    // Enable mesh self-shadowing for detail and apply subdivision
     model.traverse((child) => {
       if (child.isMesh) {
         child.castShadow = true
         child.receiveShadow = true
+        
+        // Apply LoopSubdivision smoothing
+        if (params.subdivisionIterations > 0 && child.geometry) {
+          const subdivParams = {
+            split: true,
+            uvSmooth: false,
+            preserveEdges: false,
+            flatOnly: false,
+            maxTriangles: Number.POSITIVE_INFINITY
+          }
+          child.geometry = LoopSubdivision.modify(child.geometry, params.subdivisionIterations, subdivParams)
+        }
       }
     })
   },
@@ -244,6 +261,9 @@ function renderASCII() {
       if (brightness < 0.9) {
         const charIndex = Math.floor((1 - brightness) * (charSet.length - 1))
         const char = charSet[charIndex] || ' '
+        
+        // Dualton: black for dark, gray for lighter
+        asciiCtx.fillStyle = brightness < 0.5 ? 'black' : '#808080'
         
         // Draw character
         const drawX = (x / width) * asciiCanvas.width
