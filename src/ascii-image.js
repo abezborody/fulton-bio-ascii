@@ -21,8 +21,8 @@ const charBrightnessMap = {}
 // Analyze character brightness
 function analyzeChars() {
   const canvas = document.createElement('canvas')
-  const width = Math.floor(10)
-  const height = Math.floor(10)
+  const width = 10 | 0
+  const height = 10 | 0
   canvas.width = width
   canvas.height = height
   const ctx = canvas.getContext('2d')
@@ -39,7 +39,8 @@ function analyzeChars() {
     ctx.fillText(char, 1, 8)
 
     try {
-      const data = ctx.getImageData(0, 0, width, height).data
+      // Use explicit integer conversion to avoid "not of type long" error
+      const data = ctx.getImageData(0 | 0, 0 | 0, width | 0, height | 0).data
       let total = 0
       for (let i = 3; i < data.length; i += 4) {
         total += data[i]
@@ -106,12 +107,18 @@ function loadImageAndRender() {
 function renderAscii() {
   if (!imageElement || !isActive) return
 
+  // Validate image dimensions
+  if (!imageElement.width || !imageElement.height || imageElement.width <= 0 || imageElement.height <= 0) {
+    console.error('Invalid image dimensions:', imageElement.width, imageElement.height)
+    return
+  }
+
   const width = Math.floor(120)
   const height = Math.floor((imageElement.height / imageElement.width) * width / 1.9)
 
-  // Ensure minimum dimensions
-  const finalWidth = Math.max(1, width)
-  const finalHeight = Math.max(1, height)
+  // Ensure minimum dimensions and valid values
+  const finalWidth = Math.max(1, width | 0)
+  const finalHeight = Math.max(1, (height | 0))
 
   const canvas = document.createElement('canvas')
   canvas.width = finalWidth
@@ -126,7 +133,8 @@ function renderAscii() {
 
   try {
     ctx.drawImage(imageElement, 0, 0, finalWidth, finalHeight)
-    const imageData = ctx.getImageData(0, 0, finalWidth, finalHeight)
+    // Ensure all parameters are proper integers (unsigned long)
+    const imageData = ctx.getImageData(0, 0, finalWidth >>> 0, finalHeight >>> 0)
     const data = imageData.data
 
     // Build ASCII output
