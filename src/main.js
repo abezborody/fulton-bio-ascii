@@ -85,7 +85,7 @@ for (const tab of tabs) {
 }
 
 // Initialize ASCII effect
-initAsciiEffect('ascii-view', 'public/97110_50709.jpg')
+initAsciiEffect('ascii-view', '/97110_50709.jpg')
 
 // Add inputs directly to pane
 pane.addBinding(params, 'scale', { min: 0.1, max: 5, step: 0.1, label: 'Scale' })
