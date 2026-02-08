@@ -13,6 +13,90 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+.tab-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  background: #1a1a1a;
+  border-bottom: 1px solid #333;
+  z-index: 1000;
+}
+
+.tab {
+  padding: 12px 24px;
+  cursor: pointer;
+  background: transparent;
+  color: #888;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s;
+  user-select: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+}
+
+.tab:hover {
+  color: #fff;
+  background: #333;
+}
+
+#ascii-controls {
+  position: absolute;
+  top: 50px;
+  right: 20px;
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  background: #1a1a1a;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid #333;
+  z-index: 1001;
+}
+
+#ascii-controls label {
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+#ascii-controls input[type="range"] {
+  width: 120px;
+  cursor: pointer;
+}
+
+#ascii-view {
+  display: none;
+  position: absolute;
+  top: 40px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  justify-content: center;
+  align-items: center;
+  overflow: auto;
+}
+
+#ascii-view.visible {
+  display: flex;
+}
+
+#threejs-view {
+  display: none;
+  position: absolute;
+  top: 40px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+#threejs-view.visible {
+  display: block;
+}
+
+
 * {
   margin: 0;
   padding: 0;
@@ -43,6 +127,7 @@ h1 {
   width: 100vw;
   height: 100vh;
   position: relative;
+  padding-top: 40px;
 }
 
 .logo {

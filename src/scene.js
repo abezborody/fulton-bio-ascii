@@ -27,7 +27,7 @@ asciiCanvas.style.width = '100%'
 asciiCanvas.style.height = '100%'
 asciiCanvas.width = window.innerWidth
 asciiCanvas.height = window.innerHeight
-document.getElementById('app').appendChild(asciiCanvas)
+document.getElementById('threejs-view').appendChild(asciiCanvas)
 
 // ASCII configuration
 const asciiChars = ' .:-=+*#%@1234567890'
@@ -241,15 +241,19 @@ export function animate(params, pane) {
 
 // Handle window resize
 export function handleResize() {
-  camera.aspect = window.innerWidth / window.innerHeight
+  const tabBarHeight = 40
+  const width = window.innerWidth
+  const height = window.innerHeight - tabBarHeight
+  
+  camera.aspect = width / height
   camera.updateProjectionMatrix()
 
   // Update 2D canvas size
-  asciiCanvas.width = window.innerWidth
-  asciiCanvas.height = window.innerHeight
+  asciiCanvas.width = width
+  asciiCanvas.height = height
 
   // Update 3D renderer to full resolution
-  renderer.setSize(window.innerWidth, window.innerHeight)
+  renderer.setSize(width, height)
 }
 
 // Update model from params

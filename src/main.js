@@ -6,6 +6,13 @@ import {
   handleResize,
   updateModelFromParams
 } from './scene.js'
+import {
+  initAsciiEffect,
+  showAsciiEffect,
+  hideAsciiEffect,
+  updateBrightness,
+  startBrightnessAnimation
+} from './ascii-image.js'
 
 // Model parameters for Tweakpane
 const params = {
@@ -31,10 +38,54 @@ const params = {
   circleSpeed: Math.PI * 2 /8, // 1 full rotation per second
   circleEnabled: true,
   subdivisionIterations: 1,
+  asciiImageBrightness: 0,
 }
 
 // Create Tweakpane
 const pane = new Pane()
+const paneElement = pane.element
+
+// Tab switching functionality
+const tabs = document.querySelectorAll('.tab')
+const threejsView = document.getElementById('threejs-view')
+const asciiView = document.getElementById('ascii-view')
+
+let currentView = 'threejs'
+
+for (const tab of tabs) {
+  tab.addEventListener('click', () => {
+    const view = tab.dataset.view
+    if (view === currentView) return
+
+    // Update tab states
+    for (const t of tabs) {
+      t.classList.remove('active')
+    }
+    tab.classList.add('active')
+
+    // Switch views
+    if (view === 'threejs') {
+      threejsView.classList.add('visible')
+      asciiView.classList.remove('visible')
+      hideAsciiEffect()
+      paneElement.style.display = 'block'
+    } else if (view === 'ascii') {
+      threejsView.classList.remove('visible')
+      asciiView.classList.add('visible')
+      showAsciiEffect(params.asciiImageBrightness)
+      paneElement.style.display = 'none'
+      // Start brightness animation loop
+      startBrightnessAnimation((brightness) => {
+        params.asciiImageBrightness = brightness
+      })
+    }
+
+    currentView = view
+  })
+}
+
+// Initialize ASCII effect
+initAsciiEffect('ascii-view', 'public/97110_50709.jpg')
 
 // Add inputs directly to pane
 pane.addBinding(params, 'scale', { min: 0.1, max: 5, step: 0.1, label: 'Scale' })

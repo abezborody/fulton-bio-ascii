@@ -5,6 +5,7 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>fullton</title>
+    <script src="https://cdn.jsdelivr.net/npm/aalib.js@2.0.0/dist/aalib.js"></script>
     <script type="importmap">
     {
       "imports": {
@@ -15,7 +16,14 @@
     </script>
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">
+      <div class="tab-bar">
+        <div class="tab active" data-view="threejs">3D Scene</div>
+        <div class="tab" data-view="ascii">ASCII Art</div>
+      </div>
+      <div id="threejs-view" class="visible"></div>
+      <div id="ascii-view"></div>
+    </div>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

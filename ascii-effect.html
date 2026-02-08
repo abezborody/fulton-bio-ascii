@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASCII Image Effect</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #000;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Courier New', monospace;
+            color: #0f0;
+        }
+        h1 {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        #ascii-container {
+            display: flex;
+            justify-content: center;
+            max-width: 100%;
+            overflow: auto;
+            background: #000;
+            border: 1px solid #333;
+            padding: 10px;
+        }
+        #ascii-container pre {
+            color: #0f0;
+            font-size: 8px;
+            line-height: 8px;
+            letter-spacing: 0;
+            white-space: pre;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>ASCII Art Effect</h1>
+    <div id="ascii-container"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/aalib.js@2.0.0/dist/aalib.js"></script>
+    <script>
+        aalib.read.image.fromURL("public/97110_50709.jpg")
+            .map(aalib.aa({ width: 150, height: 100 }))
+            .map(aalib.render.html())
+            .subscribe(el => {
+                document.querySelector("#ascii-container").appendChild(el);
+            });
+    </script>
+</body>
+</html>
