@@ -21,22 +21,34 @@ const charBrightnessMap = {}
 // Analyze character brightness
 function analyzeChars() {
   const canvas = document.createElement('canvas')
-  canvas.width = 10
-  canvas.height = 10
+  const width = Math.floor(10)
+  const height = Math.floor(10)
+  canvas.width = width
+  canvas.height = height
   const ctx = canvas.getContext('2d')
 
+  if (!ctx) {
+    console.error('Failed to get 2D context for character analysis')
+    return
+  }
+
   for (const char of charSet) {
-    ctx.clearRect(0, 0, 10, 10)
+    ctx.clearRect(0, 0, width, height)
     ctx.fillStyle = '#000'
     ctx.font = '10px monospace'
     ctx.fillText(char, 1, 8)
 
-    const data = ctx.getImageData(0, 0, 10, 10).data
-    let total = 0
-    for (let i = 3; i < data.length; i += 4) {
-      total += data[i]
+    try {
+      const data = ctx.getImageData(0, 0, width, height).data
+      let total = 0
+      for (let i = 3; i < data.length; i += 4) {
+        total += data[i]
+      }
+      charBrightnessMap[char] = total / (width * height * 255)
+    } catch (error) {
+      console.error('Error analyzing character brightness:', error)
+      charBrightnessMap[char] = 0.5 // Default fallback
     }
-    charBrightnessMap[char] = total / (10 * 10 * 255)
   }
 }
 
@@ -94,59 +106,73 @@ function loadImageAndRender() {
 function renderAscii() {
   if (!imageElement || !isActive) return
 
-  const width = 120
+  const width = Math.floor(120)
   const height = Math.floor((imageElement.height / imageElement.width) * width / 1.9)
 
+  // Ensure minimum dimensions
+  const finalWidth = Math.max(1, width)
+  const finalHeight = Math.max(1, height)
+
   const canvas = document.createElement('canvas')
-  canvas.width = width
-  canvas.height = height
+  canvas.width = finalWidth
+  canvas.height = finalHeight
   const ctx = canvas.getContext('2d')
 
-  ctx.drawImage(imageElement, 0, 0, width, height)
-  const imageData = ctx.getImageData(0, 0, width, height)
-  const data = imageData.data
-
-  // Build ASCII output
-  let asciiOutput = ''
-
-  for (let y = 0; y < height; y++) {
-    let line = ''
-    for (let x = 0; x < width; x++) {
-      const i = (y * width + x) * 4
-      const r = data[i]
-      const g = data[i + 1]
-      const b = data[i + 2]
-      const a = data[i + 3] / 255
-
-      // Calculate brightness
-      let brightness = (r + g + b) / 765 * a + (1 - a)
-
-      // Apply brightness adjustment (-1 to 1 range)
-      brightness = brightness + brightnessValue
-      brightness = Math.max(0, Math.min(1, brightness))
-
-      // Map to character
-      const charIndex = Math.floor((1 - brightness) * (charSet.length - 1))
-      line += charSet[Math.max(0, Math.min(charSet.length - 1, charIndex))]
-    }
-    asciiOutput += `${line}
-`
+  // Check if canvas context is valid
+  if (!ctx) {
+    console.error('Failed to get 2D context')
+    return
   }
 
-  // Render to DOM
-  asciiContainer.innerHTML = ''
-  const pre = document.createElement('pre')
-  pre.textContent = asciiOutput
-  pre.style.fontFamily = "'Courier New', monospace"
-  pre.style.fontSize = '8px'
-  pre.style.lineHeight = '8px'
-  pre.style.letterSpacing = '0'
-  pre.style.whiteSpace = 'pre'
-  pre.style.margin = '0'
-  pre.style.padding = '0'
-  pre.style.color = '#000'
+  try {
+    ctx.drawImage(imageElement, 0, 0, finalWidth, finalHeight)
+    const imageData = ctx.getImageData(0, 0, finalWidth, finalHeight)
+    const data = imageData.data
 
-  asciiContainer.appendChild(pre)
+    // Build ASCII output
+    let asciiOutput = ''
+
+    for (let y = 0; y < finalHeight; y++) {
+      let line = ''
+      for (let x = 0; x < finalWidth; x++) {
+        const i = (y * finalWidth + x) * 4
+        const r = data[i]
+        const g = data[i + 1]
+        const b = data[i + 2]
+        const a = data[i + 3] / 255
+
+        // Calculate brightness
+        let brightness = (r + g + b) / 765 * a + (1 - a)
+
+        // Apply brightness adjustment (-1 to 1 range)
+        brightness = brightness + brightnessValue
+        brightness = Math.max(0, Math.min(1, brightness))
+
+        // Map to character
+        const charIndex = Math.floor((1 - brightness) * (charSet.length - 1))
+        line += charSet[Math.max(0, Math.min(charSet.length - 1, charIndex))]
+      }
+      asciiOutput += `${line}
+`
+    }
+
+    // Render to DOM
+    asciiContainer.innerHTML = ''
+    const pre = document.createElement('pre')
+    pre.textContent = asciiOutput
+    pre.style.fontFamily = "'Courier New', monospace"
+    pre.style.fontSize = '8px'
+    pre.style.lineHeight = '8px'
+    pre.style.letterSpacing = '0'
+    pre.style.whiteSpace = 'pre'
+    pre.style.margin = '0'
+    pre.style.padding = '0'
+    pre.style.color = '#000'
+
+    asciiContainer.appendChild(pre)
+  } catch (error) {
+    console.error('Error in renderAscii:', error)
+  }
 }
 
 // Update brightness and re-render
