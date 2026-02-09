@@ -103,7 +103,7 @@ function loadImageAndRender() {
   }
 }
 
-// Render ASCII art with brightness control
+// Render ASCII art with brightness control and halftone gray shades
 function renderAscii() {
   if (!imageElement || !isActive) return
 
@@ -137,11 +137,10 @@ function renderAscii() {
     const imageData = ctx.getImageData(0, 0, finalWidth >>> 0, finalHeight >>> 0)
     const data = imageData.data
 
-    // Build ASCII output
+    // Build ASCII output with span elements for gray halftone effect
     let asciiOutput = ''
 
     for (let y = 0; y < finalHeight; y++) {
-      let line = ''
       for (let x = 0; x < finalWidth; x++) {
         const i = (y * finalWidth + x) * 4
         const r = data[i]
@@ -158,16 +157,21 @@ function renderAscii() {
 
         // Map to character
         const charIndex = Math.floor((1 - brightness) * (charSet.length - 1))
-        line += charSet[Math.max(0, Math.min(charSet.length - 1, charIndex))]
+        const char = charSet[Math.max(0, Math.min(charSet.length - 1, charIndex))]
+
+        // Create halftone effect by combining character with gray color
+        // For mid-tones, we use both character density and color
+        const grayValue = Math.floor(brightness * 255)
+        const escapedChar = char === '&' ? '&amp;' : char === '<' ? '&lt;' : char === '>' ? '&gt;' : char
+        asciiOutput += `<span style="color: rgb(${grayValue}, ${grayValue}, ${grayValue})">${escapedChar}</span>`
       }
-      asciiOutput += `${line}
-`
+      asciiOutput += '\n'
     }
 
     // Render to DOM
     asciiContainer.innerHTML = ''
     const pre = document.createElement('pre')
-    pre.textContent = asciiOutput
+    pre.innerHTML = asciiOutput
     pre.style.fontFamily = "'Courier New', monospace"
     pre.style.fontSize = '8px'
     pre.style.lineHeight = '8px'
@@ -175,7 +179,6 @@ function renderAscii() {
     pre.style.whiteSpace = 'pre'
     pre.style.margin = '0'
     pre.style.padding = '0'
-    pre.style.color = '#000'
 
     asciiContainer.appendChild(pre)
   } catch (error) {
