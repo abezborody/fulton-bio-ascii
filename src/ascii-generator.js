@@ -32,7 +32,7 @@ const params = {
   colorPalette: ColorPalette.Grey2Bit,
   bgColor: "#ffffff",
   charColor: "#000000",
-  aspectRatio: 1.8, // Adjustable aspect ratio correction
+  aspectRatio: 1, // Adjustable aspect ratio correction
 };
 
 // Cached data
@@ -398,8 +398,8 @@ function createControls() {
   const aspectGroup = document.createElement("div");
   aspectGroup.className = "control-group";
   aspectGroup.innerHTML = `
-    <label>Aspect Ratio <span class="value" id="val-aspect">${params.aspectRatio.toFixed(2)}</span></label>
-    <input type="range" id="ctrl-aspect" min="0.5" max="3" step="0.01" value="${params.aspectRatio}">
+    <label>Aspect Ratio <span class="value" id="val-aspect">1.00</span></label>
+    <input type="range" id="ctrl-aspect" min="0.5" max="3" step="0.01" value="1">
   `;
   controlsContainer.appendChild(aspectGroup);
 
