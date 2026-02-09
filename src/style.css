@@ -119,20 +119,23 @@
   padding: 20px;
 }
 
-#ascii-output pre {
+#ascii-output .ascii-grid {
+  display: grid;
+  /* Use CSS variables to set grid dimensions dynamically */
+  grid-template-columns: repeat(var(--width, 80), 4px);
+  grid-template-rows: repeat(var(--height, 42), 5px);
   font-family: 'Courier New', monospace;
-  font-size: 8px;
-  line-height: 8px;
-  letter-spacing: 0;
-  white-space: pre;
-  margin: 0;
-  padding: 0;
+  font-size: 5px;
+  line-height: 5px;
+  gap: 0;
 }
 
-#ascii-output .ascii-char {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
+#ascii-output .ascii-cell {
+  width: 4px;
+  height: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
 }
 

@@ -150,8 +150,8 @@ for (const tab of tabs) {
 // Initialize ASCII effect
 initAsciiEffect("ascii-view", "/97110_50709.jpg");
 
-// Initialize ASCII generator
-initGenerator("ascii-output", "generator-controls", "/97110_50709.jpg");
+// Initialize ASCII generator (no default image - will use demo image)
+initGenerator("ascii-output", "generator-controls", "");
 
 // Add inputs directly to pane
 pane.addBinding(params, "scale", {
