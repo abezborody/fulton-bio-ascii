@@ -350,6 +350,23 @@ function createControls() {
   `;
   controlsContainer.appendChild(urlGroup);
 
+  // Export Scale
+  const exportScaleGroup = document.createElement("div");
+  exportScaleGroup.className = "control-group";
+  exportScaleGroup.innerHTML = `
+    <label>Export Scale <span class="value" id="val-export-scale">6</span></label>
+    <input type="range" id="ctrl-export-scale" min="1" max="10" step="1" value="6">
+  `;
+  controlsContainer.appendChild(exportScaleGroup);
+
+  // Download button
+  const downloadGroup = document.createElement("div");
+  downloadGroup.className = "control-group";
+  downloadGroup.innerHTML = `
+    <button id="ctrl-download" type="button">Download PNG</button>
+  `;
+  controlsContainer.appendChild(downloadGroup);
+
   // Character Set
   const charsetGroup = document.createElement("div");
   charsetGroup.className = "control-group";
@@ -486,7 +503,8 @@ function createControls() {
 
   document.getElementById("ctrl-aspect").addEventListener("input", (e) => {
     params.aspectRatio = parseFloat(e.target.value);
-    document.getElementById("val-aspect").textContent = params.aspectRatio.toFixed(2);
+    document.getElementById("val-aspect").textContent =
+      params.aspectRatio.toFixed(2);
     loadImageAndGenerate();
   });
 
@@ -527,6 +545,17 @@ function createControls() {
     params.charColor = e.target.value;
     generate();
   });
+
+  document
+    .getElementById("ctrl-export-scale")
+    .addEventListener("input", (e) => {
+      const scale = parseInt(e.target.value);
+      document.getElementById("val-export-scale").textContent = scale;
+    });
+
+  document.getElementById("ctrl-download").addEventListener("click", () => {
+    exportToPNG();
+  });
 }
 
 // Initialize the generator
@@ -545,7 +574,12 @@ export function showGenerator() {
   if (!container) return;
   isActive = true;
   container.parentElement.classList.add("visible");
-  loadImageAndGenerate();
+  // If image is already loaded, process it
+  if (imageElement?.complete) {
+    onImageLoaded();
+  } else {
+    loadImageAndGenerate();
+  }
 }
 
 // Hide generator
@@ -554,4 +588,92 @@ export function hideGenerator() {
   if (container) {
     container.parentElement.classList.remove("visible");
   }
+}
+
+// Parse hex color to RGB array
+function hexToRgb(hex) {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result
+    ? [
+        parseInt(result[1], 16),
+        parseInt(result[2], 16),
+        parseInt(result[3], 16),
+      ]
+    : [0, 0, 0];
+}
+
+// Parse RGBA string to RGB array
+function rgbaToRgbArray(rgbaStr) {
+  const match = rgbaStr.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+  if (match) {
+    return [parseInt(match[1]), parseInt(match[2]), parseInt(match[3])];
+  }
+  return [0, 0, 0];
+}
+
+// Export ASCII art as PNG
+function exportToPNG() {
+  if (width === 0 || height === 0 || normalizedMap.length === 0) {
+    alert("No ASCII art to export. Please generate an image first.");
+    return;
+  }
+
+  const exportScale = parseInt(
+    document.getElementById("ctrl-export-scale")?.value || 6,
+  );
+  // Courier New characters are approximately 0.6 times as tall as they are wide
+  // We use the same aspect ratio as in the display
+  const charWidth = 8;
+  const charHeight = 8;
+
+  const canvasWidth = width * charWidth * exportScale;
+  const canvasHeight = height * charHeight * exportScale;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = canvasWidth;
+  canvas.height = canvasHeight;
+  const ctx = canvas.getContext("2d");
+
+  if (!ctx) {
+    alert("Failed to create canvas for export.");
+    return;
+  }
+
+  // Fill background
+  const bgColor = hexToRgb(params.bgColor);
+  ctx.fillStyle = `rgb(${bgColor[0]}, ${bgColor[1]}, ${bgColor[2]})`;
+  ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+  // Set font - use line-height equal to font size for proper spacing
+  const fontSize = 8 * exportScale;
+  ctx.font = `${fontSize}px 'Courier New', monospace`;
+  ctx.textBaseline = "top";
+
+  // Draw each character
+  for (let cellY = 0; cellY < height; cellY += 1) {
+    for (let cellX = 0; cellX < width; cellX += 1) {
+      const index = cellX + cellY * width;
+      const char = getClosestChar(normalizedMap[index]);
+
+      // Set color
+      if (params.colorPalette !== ColorPalette.Monochrome) {
+        const colorStr = getCharColor(colorMap[index]);
+        const colorRgb = rgbaToRgbArray(colorStr);
+        ctx.fillStyle = `rgb(${colorRgb[0]}, ${colorRgb[1]}, ${colorRgb[2]})`;
+      } else {
+        ctx.fillStyle = params.charColor;
+      }
+
+      const x = cellX * charWidth * exportScale;
+      const y = cellY * charHeight * exportScale;
+      ctx.fillText(char, x, y);
+    }
+  }
+
+  // Download the canvas as PNG
+  const link = document.createElement("a");
+  const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, "-");
+  link.download = `ascii-art-${timestamp}.png`;
+  link.href = canvas.toDataURL("image/png");
+  link.click();
 }
