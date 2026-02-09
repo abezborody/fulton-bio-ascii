@@ -21,7 +21,8 @@ const ColorPalette = {
 const defaultCharSet = " .:-=+*#%@";
 
 // Default demo image (used when no image is uploaded)
-const defaultImageUrl = "data:image/jpeg;base64,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";
+const defaultImageUrl =
+  "data:image/jpeg;base64,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";
 
 // Parameters
 const params = {
@@ -35,7 +36,6 @@ const params = {
   colorPalette: ColorPalette.Grey2Bit,
   bgColor: "#ffffff",
   charColor: "#000000",
-  aspectRatio: 1, // Adjustable aspect ratio correction
 };
 
 // Cached data
@@ -45,6 +45,7 @@ let valueMap = [];
 let normalizedMap = [];
 let width = 0;
 let height = 0;
+let baseImageAspectRatio = 1; // Store the actual image aspect ratio (width/height)
 
 // Color palettes
 const colorPalettes = {};
@@ -154,12 +155,14 @@ function loadImageAndGenerate() {
 
 function onImageLoaded() {
   width = params.size;
+
+  // Store the base image aspect ratio (width/height)
+  baseImageAspectRatio = imageElement.width / imageElement.height;
+
   // Calculate height maintaining aspect ratio
-  // The 1.9 divisor accounts for characters being taller than wide (approx aspect ratio correction)
-  height = Math.floor(
-    (((imageElement.height / imageElement.width) * width) / 1.9) *
-      params.aspectRatio,
-  );
+  // Character cells are now 4px x 4px (square), so no correction factor needed
+  // For proper aspect ratio: height = width / (imageWidth/imageHeight)
+  height = Math.floor(width / baseImageAspectRatio);
 
   const canvas = document.createElement("canvas");
   canvas.width = width * params.charSamples;
@@ -398,15 +401,6 @@ function createControls() {
   `;
   controlsContainer.appendChild(samplesGroup);
 
-  // Aspect Ratio
-  const aspectGroup = document.createElement("div");
-  aspectGroup.className = "control-group";
-  aspectGroup.innerHTML = `
-    <label>Aspect Ratio <span class="value" id="val-aspect">1.00</span></label>
-    <input type="range" id="ctrl-aspect" min="0.5" max="3" step="0.01" value="1">
-  `;
-  controlsContainer.appendChild(aspectGroup);
-
   // Contrast
   const contrastGroup = document.createElement("div");
   contrastGroup.className = "control-group";
@@ -502,13 +496,6 @@ function createControls() {
     params.charSamples = parseInt(e.target.value);
     document.getElementById("val-samples").textContent = params.charSamples;
     analyzeCharRegions();
-    loadImageAndGenerate();
-  });
-
-  document.getElementById("ctrl-aspect").addEventListener("input", (e) => {
-    params.aspectRatio = parseFloat(e.target.value);
-    document.getElementById("val-aspect").textContent =
-      params.aspectRatio.toFixed(2);
     loadImageAndGenerate();
   });
 
@@ -626,7 +613,7 @@ function exportToPNG() {
   );
   // Match the display dimensions
   const charWidth = 4;
-  const charHeight = 5;
+  const charHeight = 4;
 
   const canvasWidth = width * charWidth * exportScale;
   const canvasHeight = height * charHeight * exportScale;
@@ -647,7 +634,7 @@ function exportToPNG() {
   ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
   // Set font - use line-height equal to font size for proper spacing
-  const fontSize = 5 * exportScale;
+  const fontSize = 4 * exportScale;
   ctx.font = `${fontSize}px 'Courier New', monospace`;
   ctx.textBaseline = "top";
 
