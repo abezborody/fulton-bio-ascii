@@ -25,8 +25,10 @@ asciiCanvas.style.top = '0'
 asciiCanvas.style.left = '0'
 asciiCanvas.style.width = '100%'
 asciiCanvas.style.height = '100%'
-asciiCanvas.width = window.innerWidth
-asciiCanvas.height = window.innerHeight
+const dpr = Math.min(window.devicePixelRatio, 3) // Cap at 3x for performance
+asciiCanvas.width = window.innerWidth * dpr
+asciiCanvas.height = window.innerHeight * dpr
+asciiCtx.scale(dpr, dpr)
 document.getElementById('threejs-view').appendChild(asciiCanvas)
 
 // ASCII configuration
@@ -147,15 +149,20 @@ export function renderASCII(params) {
 
   const width = renderer.domElement.width
   const height = renderer.domElement.height
+  const dpr = Math.min(window.devicePixelRatio, 3)
 
   // Get pixel data from 3D render
   const gl = renderer.getContext()
   const pixels = new Uint8Array(width * height * 4)
   gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels)
 
+  // Use CSS display size (not internal resolution) for drawing calculations
+  const displayWidth = asciiCanvas.width / dpr
+  const displayHeight = asciiCanvas.height / dpr
+
   // Clear 2D canvas with white background
   asciiCtx.fillStyle = `${params.backgroundColor}`
-  asciiCtx.fillRect(0, 0, asciiCanvas.width, asciiCanvas.height)
+  asciiCtx.fillRect(0, 0, displayWidth, displayHeight)
 
   // Set font with black color
   const fontSize = params.asciiFontSize * params.asciiResolution
@@ -166,8 +173,8 @@ export function renderASCII(params) {
   const charSet = params.asciiCharSet || asciiChars
 
   // Calculate step size based on resolution
-  const stepX = Math.max(1, Math.floor(width / (asciiCanvas.width / fontSize)))
-  const stepY = Math.max(1, Math.floor(height / (asciiCanvas.height / fontSize)))
+  const stepX = Math.max(1, Math.floor(width / (displayWidth / fontSize)))
+  const stepY = Math.max(1, Math.floor(height / (displayHeight / fontSize)))
 
   // Draw ASCII characters
   for (let y = 0; y < height; y += stepY) {
@@ -188,9 +195,9 @@ export function renderASCII(params) {
         // Dualton: black for dark, gray for lighter
         asciiCtx.fillStyle = brightness < 0.5 ? 'black' : '#808080'
 
-        // Draw character
-        const drawX = (x / width) * asciiCanvas.width
-        const drawY = (y / height) * asciiCanvas.height
+        // Draw character (using display size since ctx is scaled)
+        const drawX = (x / width) * displayWidth
+        const drawY = (y / height) * displayHeight
         asciiCtx.fillText(char, drawX, drawY)
       }
     }
@@ -244,13 +251,16 @@ export function handleResize() {
   const tabBarHeight = 40
   const width = window.innerWidth
   const height = window.innerHeight - tabBarHeight
-  
+  const dpr = Math.min(window.devicePixelRatio, 3) // Cap at 3x for performance
+
   camera.aspect = width / height
   camera.updateProjectionMatrix()
 
-  // Update 2D canvas size
-  asciiCanvas.width = width
-  asciiCanvas.height = height
+  // Update 2D canvas size with DPR scaling
+  asciiCanvas.width = width * dpr
+  asciiCanvas.height = height * dpr
+  asciiCtx.setTransform(1, 0, 0, 1, 0, 0) // Reset transform
+  asciiCtx.scale(dpr, dpr) // Re-apply DPR scaling
 
   // Update 3D renderer to full resolution
   renderer.setSize(width, height)
