@@ -29,13 +29,14 @@ const params = {
   charSet: defaultCharSet,
   url: "", // Start empty, will use default image if no upload
   charSamples: 1,
-  size: 80,
+  size: 200,
   contrast: 0,
   brightness: 0,
   alpha: 0,
   colorPalette: ColorPalette.Grey2Bit,
   bgColor: "#ffffff",
   charColor: "#000000",
+  transparentBg: false,
 };
 
 // Cached data
@@ -388,7 +389,7 @@ function createControls() {
   sizeGroup.className = "control-group";
   sizeGroup.innerHTML = `
     <label>Width (chars) <span class="value" id="val-size">${params.size}</span></label>
-    <input type="range" id="ctrl-size" min="10" max="150" value="${params.size}">
+    <input type="range" id="ctrl-size" min="50" max="500" value="${params.size}">
   `;
   controlsContainer.appendChild(sizeGroup);
 
@@ -442,6 +443,17 @@ function createControls() {
     <select id="ctrl-palette">${paletteOptions}</select>
   `;
   controlsContainer.appendChild(paletteGroup);
+
+  // Transparent Background
+  const transparentBgGroup = document.createElement("div");
+  transparentBgGroup.className = "control-group";
+  transparentBgGroup.innerHTML = `
+    <label>
+      <input type="checkbox" id="ctrl-transparent-bg" ${params.transparentBg ? "checked" : ""}>
+      Transparent Background
+    </label>
+  `;
+  controlsContainer.appendChild(transparentBgGroup);
 
   // Background Color
   const bgColorGroup = document.createElement("div");
@@ -525,6 +537,13 @@ function createControls() {
     params.colorPalette = e.target.value;
     generate();
   });
+
+  document
+    .getElementById("ctrl-transparent-bg")
+    .addEventListener("change", (e) => {
+      params.transparentBg = e.target.checked;
+      generate();
+    });
 
   document.getElementById("ctrl-bgcolor").addEventListener("input", (e) => {
     params.bgColor = e.target.value;
@@ -628,10 +647,12 @@ function exportToPNG() {
     return;
   }
 
-  // Fill background
-  const bgColor = hexToRgb(params.bgColor);
-  ctx.fillStyle = `rgb(${bgColor[0]}, ${bgColor[1]}, ${bgColor[2]})`;
-  ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+  // Fill background (skip if transparent background is enabled)
+  if (!params.transparentBg) {
+    const bgColor = hexToRgb(params.bgColor);
+    ctx.fillStyle = `rgb(${bgColor[0]}, ${bgColor[1]}, ${bgColor[2]})`;
+    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+  }
 
   // Set font - use line-height equal to font size for proper spacing
   const fontSize = 4 * exportScale;
