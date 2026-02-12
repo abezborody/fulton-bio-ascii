@@ -34,36 +34,49 @@
     "npm/three@0.147.0/build/three.min.js," +
     "npm/three@0.147.0/examples/js/loaders/GLTFLoader.js";
 
-  function loadScript(url) {
+  // Preload removed — it competes for bandwidth and doesn't help with cross-origin
+  // THREE.js will be fetched only when THREEJSASCII.load() is called
+
+  // Lazy loader — only loads when container is near viewport
+  function lazyLoadThree() {
     return new Promise(function (resolve, reject) {
+      if (typeof THREE !== "undefined" && THREE.GLTFLoader) {
+        return resolve();
+      }
       var s = document.createElement("script");
-      s.src = url;
+      s.src = THREE_COMBINED_URL;
       s.async = true;
-      s.onload = function () {
-        resolve();
-      };
+      s.defer = true;
+      s.onload = resolve;
       s.onerror = function () {
-        reject(new Error("[FultonASCII] Failed to load: " + url));
+        reject(
+          new Error("[THREEJSASCII] Failed to load: " + THREE_COMBINED_URL),
+        );
       };
       document.head.appendChild(s);
     });
   }
 
-  // Load THREE + GLTFLoader in a single request
-  var _ready = (function () {
-    // If both are already on the page, skip loading entirely
-    if (typeof THREE !== "undefined" && THREE.GLTFLoader) {
-      return Promise.resolve();
+  // Load THREE + GLTFLoader immediately when ready is accessed (hero section use case)
+  var _ready = new Promise(function (resolve) {
+    // Load during idle time to not block main thread
+    var loadTask = function () {
+      lazyLoadThree()
+        .then(function () {
+          console.log("[THREEJSASCII] Three.js + GLTFLoader ready");
+          resolve();
+        })
+        .catch(function (err) {
+          console.error(err);
+          resolve(); // Resolve anyway to prevent hanging
+        });
+    };
+    if (typeof requestIdleCallback !== "undefined") {
+      requestIdleCallback(loadTask, { timeout: 2000 });
+    } else {
+      setTimeout(loadTask, 0);
     }
-
-    return loadScript(THREE_COMBINED_URL)
-      .then(function () {
-        console.log("[FultonASCII] Three.js + GLTFLoader ready");
-      })
-      .catch(function (err) {
-        console.error(err);
-      });
-  })();
+  });
 
   // ─── LoopSubdivision (inlined from three-subdivide@1.1.5, MIT License) ──────
   // Original: https://github.com/stevinz/three-subdivide
@@ -601,9 +614,9 @@
       for (var attributeName in morphAttributes) {
         var array = [];
         var morphAttribute = morphAttributes[attributeName];
-        for (var i = 0, l = morphAttribute.length; i < l; i++) {
-          if (morphAttribute[i].count !== vertexCount) continue;
-          array.push(flatAttribute(morphAttribute[i], vertexCount, params));
+        for (var mi = 0, l = morphAttribute.length; mi < l; mi++) {
+          if (morphAttribute[mi].count !== vertexCount) continue;
+          array.push(flatAttribute(morphAttribute[mi], vertexCount, params));
         }
         loop.morphAttributes[attributeName] = array;
       }
@@ -884,7 +897,7 @@
     rotationSpeed: 0.002,
     backgroundColor: "#ffffff",
     brightness: 0.5,
-    contrast: 1.3,
+    contrast: 2,
     asciiEnabled: true,
     asciiResolution: 0.27,
     asciiFontSize: 10,
@@ -892,7 +905,10 @@
     circleEnabled: true,
     circleRadius: 0.2,
     circleSpeed: (Math.PI * 2) / 8,
+    // Default: subdivisionIterations reduced from 2 to 1 for faster processing
     subdivisionIterations: 2,
+    // Fade-in duration in seconds
+    fadeInDuration: 1.2,
   };
 
   // LoopSubdivision is built lazily after THREE is loaded
@@ -976,8 +992,8 @@
     var renderH = fixedRows;
     renderer.setSize(renderW, renderH, false);
 
-    // Fade-in: hide canvas until model is ready, then CSS transition handles it
-    var fadeInDuration = 3; // seconds
+    // Fade-in duration from options (default 1.2s)
+    var fadeInDuration = cfg.fadeInDuration;
     var modelReady = false;
     asciiCanvas.style.opacity = "0";
     asciiCanvas.style.transition =
@@ -1043,6 +1059,10 @@
         // Trigger fade-in after model is ready
         modelReady = true;
         asciiCanvas.style.opacity = "1";
+
+        // Hide placeholder if exists
+        var placeholder = document.getElementById("three-placeholder");
+        if (placeholder) placeholder.style.display = "none";
       },
       function (xhr) {
         if (xhr.total) {
@@ -1221,4 +1241,6 @@
     initScene: initScene,
     DEFAULTS: DEFAULTS,
   };
+
+  // Auto-init removed - use THREEJSASCII.ready.then() to initialize
 })();

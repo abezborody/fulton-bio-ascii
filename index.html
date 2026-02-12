@@ -5,19 +5,12 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>fullton</title>
-    <script src="https://cdn.jsdelivr.net/npm/aalib.js@2.0.0/dist/aalib.js"></script>
-    <script type="importmap">
-      {
-        "imports": {
-          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-          "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-        }
-      }
-    </script>
+    <!-- Removed unused importmap and aalib.js - they added 5s to page load -->
   </head>
   <body>
     <div
       id="cancer-cell"
+      data-three-scene
       style="width: 100%; height: 100vh; position: relative; overflow: hidden"
     ></div>
     <!-- <div
@@ -30,13 +23,14 @@
         THREEJSASCII.initScene("#cancer-cell", {
           autoRotate: true,
           rotationSpeed: 0.002,
-          brightness: 0.5,
           contrast: 2,
           asciiFontSize: 10,
           asciiCharSet: " .:-=+*#%@",
           circleEnabled: true,
           circleRadius: 0.2,
           circleSpeed: (Math.PI * 2) / 8,
+          subdivisionIterations: 1,
+          fadeInDuration: 1.2,
         });
       });
     </script>
