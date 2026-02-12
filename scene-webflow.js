@@ -66,12 +66,11 @@ function initScene(selector, options = {}) {
 
   let { width, height } = getSize();
 
-  // Scene
+  // Scene (no background — transparent)
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(cfg.backgroundColor);
 
-  // Capture initial DPR — all sizes in physical pixels from here on
-  const initDPR = window.devicePixelRatio || 1;
+  // Capture initial DPR — cap at 2 to keep pixel count manageable on 4K/Retina
+  const initDPR = Math.min(window.devicePixelRatio || 1, 2);
   const baseW = width * initDPR;
   const baseH = height * initDPR;
 
@@ -79,13 +78,13 @@ function initScene(selector, options = {}) {
   const camera = new THREE.PerspectiveCamera(75, baseW / baseH, 0.1, 1000);
   camera.position.z = 5;
 
-  // Offscreen renderer — sized in physical pixels
+  // Offscreen renderer — sized to ASCII grid (no need for full resolution)
   const renderer = new THREE.WebGLRenderer({
     antialias: false,
-    preserveDrawingBuffer: true,
+    alpha: true,
   });
+  renderer.setClearColor(0x000000, 0);
   renderer.setPixelRatio(1);
-  renderer.setSize(baseW, baseH, false);
   renderer.shadowMap.enabled = false;
 
   // 2D ASCII canvas — fixed resolution, immune to page zoom
@@ -106,6 +105,11 @@ function initScene(selector, options = {}) {
   const cellH = fontSize;
   const fixedCols = Math.floor(baseW / cellW);
   const fixedRows = Math.floor(baseH / cellH);
+
+  // Offscreen renderer sized to ASCII grid — readPixels reads only what we need
+  const renderW = fixedCols;
+  const renderH = fixedRows;
+  renderer.setSize(renderW, renderH, false);
 
   // Lighting
   const ambientLight = new THREE.AmbientLight(0xffffff, cfg.brightness);
@@ -162,15 +166,15 @@ function initScene(selector, options = {}) {
     },
   );
 
-  // ASCII rendering — reuse pixel buffer, batch by color
+  // ASCII rendering — renderer is already sized to grid, 1 pixel = 1 cell
   let pixelBuf = null;
   let pixelBufSize = 0;
 
   function renderASCII() {
     if (!cfg.asciiEnabled) return;
 
-    const w = renderer.domElement.width;
-    const h = renderer.domElement.height;
+    const w = renderW;
+    const h = renderH;
     const gl = renderer.getContext();
 
     const needed = w * h * 4;
@@ -183,75 +187,98 @@ function initScene(selector, options = {}) {
     const cw = asciiCanvas.width;
     const ch = asciiCanvas.height;
 
-    asciiCtx.fillStyle = cfg.backgroundColor;
-    asciiCtx.fillRect(0, 0, cw, ch);
+    asciiCtx.clearRect(0, 0, cw, ch);
 
     asciiCtx.font = `${fontSize}px monospace`;
     asciiCtx.textBaseline = "top";
 
     const charSet = cfg.asciiCharSet;
-    const stepX = Math.max(1, Math.floor(w / fixedCols));
-    const stepY = Math.max(1, Math.floor(h / fixedRows));
     const drawCellW = cw / fixedCols;
     const drawCellH = ch / fixedRows;
 
-    // Collect chars into two buckets by color to minimize fillStyle switches
-    const darkChars = [];
-    const lightChars = [];
+    // Build full row strings per color bucket, then draw row-by-row
+    // This reduces fillText calls from (cols*rows) to (rows*2)
+    const darkRows = new Array(fixedRows);
+    const lightRows = new Array(fixedRows);
+    for (let r = 0; r < fixedRows; r++) {
+      darkRows[r] = "";
+      lightRows[r] = "";
+    }
 
-    let col = 0;
-    for (let y = 0; y < h; y += stepY) {
-      let row = 0;
-      for (let x = 0; x < w; x += stepX) {
-        const i = ((h - 1 - y) * w + x) * 4;
+    for (let row = 0; row < h && row < fixedRows; row++) {
+      const flippedRow = h - 1 - row;
+      let darkStr = "";
+      let lightStr = "";
+      for (let col = 0; col < w && col < fixedCols; col++) {
+        const i = (flippedRow * w + col) * 4;
         const r = pixelBuf[i];
         const g = pixelBuf[i + 1];
         const b = pixelBuf[i + 2];
+        const a = pixelBuf[i + 3];
+
+        if (a < 10) {
+          darkStr += " ";
+          lightStr += " ";
+          continue;
+        }
 
         const brightness = (r * 0.299 + g * 0.587 + b * 0.114) / 255;
 
-        if (brightness < 0.9) {
+        if (brightness >= 0.9) {
+          darkStr += " ";
+          lightStr += " ";
+        } else {
           const charIndex = Math.floor((1 - brightness) * (charSet.length - 1));
           const char = charSet[charIndex] || " ";
-          const drawX = row * drawCellW;
-          const drawY = col * drawCellH;
-
           if (brightness < 0.5) {
-            darkChars.push(char, drawX, drawY);
+            darkStr += char;
+            lightStr += " ";
           } else {
-            lightChars.push(char, drawX, drawY);
+            darkStr += " ";
+            lightStr += char;
           }
         }
-        row++;
       }
-      col++;
+      darkRows[row] = darkStr;
+      lightRows[row] = lightStr;
     }
 
-    // Draw dark chars
+    // Draw dark rows
     asciiCtx.fillStyle = "black";
-    for (let i = 0; i < darkChars.length; i += 3) {
-      asciiCtx.fillText(darkChars[i], darkChars[i + 1], darkChars[i + 2]);
+    for (let r = 0; r < fixedRows; r++) {
+      if (darkRows[r].trim()) {
+        asciiCtx.fillText(darkRows[r], 0, r * drawCellH);
+      }
     }
 
-    // Draw light chars
+    // Draw light rows
     asciiCtx.fillStyle = "#808080";
-    for (let i = 0; i < lightChars.length; i += 3) {
-      asciiCtx.fillText(lightChars[i], lightChars[i + 1], lightChars[i + 2]);
+    for (let r = 0; r < fixedRows; r++) {
+      if (lightRows[r].trim()) {
+        asciiCtx.fillText(lightRows[r], 0, r * drawCellH);
+      }
     }
   }
 
-  // Animation loop
+  // Animation loop with visibility-aware scheduling
   let circleTime = 0;
+  let lastFrameTime = 0;
+  let rafId = null;
+  let isVisible = true;
 
-  function animate() {
-    requestAnimationFrame(animate);
+  function animate(now) {
+    rafId = requestAnimationFrame(animate);
+
+    // Delta time in seconds for frame-rate-independent animation
+    const dt = lastFrameTime ? (now - lastFrameTime) / 1000 : 0.016;
+    lastFrameTime = now;
 
     if (cfg.autoRotate) {
       scene.rotation.y += cfg.rotationSpeed;
     }
 
     if (cfg.circleEnabled && model) {
-      circleTime += 0.016;
+      circleTime += dt;
       const angle = circleTime * cfg.circleSpeed;
       model.position.x = (Math.cos(angle) * cfg.circleRadius) / 2;
       model.position.y = Math.sin(angle) * cfg.circleRadius;
@@ -261,51 +288,31 @@ function initScene(selector, options = {}) {
     renderASCII();
   }
 
-  // Resize handling — counter-scale on zoom, real resize on layout change
-  let prevDPR = initDPR;
-
-  function handleResize() {
-    const { width: w, height: h } = getSize();
-    if (w === 0 || h === 0) return;
-
-    const currentDPR = window.devicePixelRatio || 1;
-    const isZoom = Math.abs(currentDPR - prevDPR) > 0.001;
-    prevDPR = currentDPR;
-
-    if (isZoom) {
-      // Zoom changed — counter-scale ASCII canvas, keep everything else fixed
-      const zoomRatio = initDPR / currentDPR;
-      asciiCanvas.style.transformOrigin = "0 0";
-      asciiCanvas.style.transform = `scale(${zoomRatio})`;
-      asciiCanvas.style.width = `${100 / zoomRatio}%`;
-      asciiCanvas.style.height = `${100 / zoomRatio}%`;
-    } else {
-      // Real layout resize — update renderer + camera, keep aspect from physical pixels
-      width = w;
-      height = h;
-
-      const physW = w * currentDPR;
-      const physH = h * currentDPR;
-
-      camera.aspect = physW / physH;
-      camera.updateProjectionMatrix();
-      renderer.setSize(physW, physH, false);
-
-      asciiCanvas.width = physW;
-      asciiCanvas.height = physH;
-
-      // Reset zoom compensation
-      asciiCanvas.style.transform = "";
-      asciiCanvas.style.width = "100%";
-      asciiCanvas.style.height = "100%";
-    }
+  // Pause when off-screen to save GPU/CPU
+  if (typeof IntersectionObserver !== "undefined") {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && !isVisible) {
+            isVisible = true;
+            lastFrameTime = 0;
+            rafId = requestAnimationFrame(animate);
+          } else if (!entry.isIntersecting && isVisible) {
+            isVisible = false;
+            if (rafId) cancelAnimationFrame(rafId);
+          }
+        });
+      },
+      { threshold: 0.01 },
+    );
+    observer.observe(container);
   }
 
-  new ResizeObserver(handleResize).observe(container);
-  window.addEventListener("resize", handleResize);
+  // Canvas and renderer are fixed — CSS stretches to fill container.
+  // No resize handling needed.
 
   // Start
-  animate();
+  rafId = requestAnimationFrame(animate);
 
   return { scene, camera, renderer, cfg };
 }
