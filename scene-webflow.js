@@ -26,7 +26,8 @@ import { GLTFLoader } from "https://esm.sh/three@0.160.0/examples/jsm/loaders/GL
 
 // ─── Default parameters ─────────────────────────────────────────────────────
 const DEFAULTS = {
-  modelUrl: "./cell.glb.txt",
+  modelUrl:
+    "https://cdn.prod.website-files.com/69823aa904992b6320d75fe8/698da57c215254412e7df2b3_cell.glb.txt",
   autoRotate: true,
   rotationSpeed: 0.002,
   backgroundColor: "#ffffff",
@@ -34,7 +35,7 @@ const DEFAULTS = {
   contrast: 1.3,
   asciiEnabled: true,
   asciiResolution: 0.27,
-  asciiFontSize: 22,
+  asciiFontSize: 10,
   asciiCharSet: " .:-=+*#%@",
   circleEnabled: true,
   circleRadius: 0.2,
@@ -69,33 +70,42 @@ function initScene(selector, options = {}) {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(cfg.backgroundColor);
 
+  // Capture initial DPR — all sizes in physical pixels from here on
+  const initDPR = window.devicePixelRatio || 1;
+  const baseW = width * initDPR;
+  const baseH = height * initDPR;
+
   // Camera
-  const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+  const camera = new THREE.PerspectiveCamera(75, baseW / baseH, 0.1, 1000);
   camera.position.z = 5;
 
-  // Offscreen renderer
+  // Offscreen renderer — sized in physical pixels
   const renderer = new THREE.WebGLRenderer({
     antialias: false,
     preserveDrawingBuffer: true,
   });
-  renderer.setSize(width, height);
   renderer.setPixelRatio(1);
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.setSize(baseW, baseH, false);
+  renderer.shadowMap.enabled = false;
 
-  // 2D ASCII canvas
+  // 2D ASCII canvas — fixed resolution, immune to page zoom
   const asciiCanvas = document.createElement("canvas");
   const asciiCtx = asciiCanvas.getContext("2d");
   asciiCanvas.style.position = "absolute";
-  asciiCanvas.style.top = "0";
-  asciiCanvas.style.left = "0";
+  asciiCanvas.style.top = "15%";
+  asciiCanvas.style.left = "30%";
   asciiCanvas.style.width = "100%";
   asciiCanvas.style.height = "100%";
-  const DPR = 3;
-  asciiCanvas.width = width * DPR;
-  asciiCanvas.height = height * DPR;
-  asciiCtx.scale(DPR, DPR);
+  asciiCanvas.width = baseW;
+  asciiCanvas.height = baseH;
   container.appendChild(asciiCanvas);
+
+  // Fixed ASCII grid — never changes
+  const fontSize = cfg.asciiFontSize * initDPR;
+  const cellW = fontSize * 0.6;
+  const cellH = fontSize;
+  const fixedCols = Math.floor(baseW / cellW);
+  const fixedRows = Math.floor(baseH / cellH);
 
   // Lighting
   const ambientLight = new THREE.AmbientLight(0xffffff, cfg.brightness);
@@ -135,8 +145,8 @@ function initScene(selector, options = {}) {
 
       model.traverse((child) => {
         if (child.isMesh) {
-          child.castShadow = true;
-          child.receiveShadow = true;
+          child.castShadow = false;
+          child.receiveShadow = false;
         }
       });
     },
@@ -152,51 +162,81 @@ function initScene(selector, options = {}) {
     },
   );
 
-  // ASCII rendering
+  // ASCII rendering — reuse pixel buffer, batch by color
+  let pixelBuf = null;
+  let pixelBufSize = 0;
+
   function renderASCII() {
     if (!cfg.asciiEnabled) return;
 
     const w = renderer.domElement.width;
     const h = renderer.domElement.height;
     const gl = renderer.getContext();
-    const pixels = new Uint8Array(w * h * 4);
-    gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
 
-    const displayWidth = asciiCanvas.width / DPR;
-    const displayHeight = asciiCanvas.height / DPR;
+    const needed = w * h * 4;
+    if (needed !== pixelBufSize) {
+      pixelBuf = new Uint8Array(needed);
+      pixelBufSize = needed;
+    }
+    gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, pixelBuf);
+
+    const cw = asciiCanvas.width;
+    const ch = asciiCanvas.height;
 
     asciiCtx.fillStyle = cfg.backgroundColor;
-    asciiCtx.fillRect(0, 0, displayWidth, displayHeight);
+    asciiCtx.fillRect(0, 0, cw, ch);
 
-    const fontSize = cfg.asciiFontSize * cfg.asciiResolution;
     asciiCtx.font = `${fontSize}px monospace`;
-    asciiCtx.fillStyle = "black";
     asciiCtx.textBaseline = "top";
 
     const charSet = cfg.asciiCharSet;
-    const stepX = Math.max(1, Math.floor(w / (displayWidth / fontSize)));
-    const stepY = Math.max(1, Math.floor(h / (displayHeight / fontSize)));
+    const stepX = Math.max(1, Math.floor(w / fixedCols));
+    const stepY = Math.max(1, Math.floor(h / fixedRows));
+    const drawCellW = cw / fixedCols;
+    const drawCellH = ch / fixedRows;
 
+    // Collect chars into two buckets by color to minimize fillStyle switches
+    const darkChars = [];
+    const lightChars = [];
+
+    let col = 0;
     for (let y = 0; y < h; y += stepY) {
+      let row = 0;
       for (let x = 0; x < w; x += stepX) {
         const i = ((h - 1 - y) * w + x) * 4;
-        const r = pixels[i];
-        const g = pixels[i + 1];
-        const b = pixels[i + 2];
+        const r = pixelBuf[i];
+        const g = pixelBuf[i + 1];
+        const b = pixelBuf[i + 2];
 
         const brightness = (r * 0.299 + g * 0.587 + b * 0.114) / 255;
 
         if (brightness < 0.9) {
           const charIndex = Math.floor((1 - brightness) * (charSet.length - 1));
           const char = charSet[charIndex] || " ";
+          const drawX = row * drawCellW;
+          const drawY = col * drawCellH;
 
-          asciiCtx.fillStyle = brightness < 0.5 ? "black" : "#808080";
-
-          const drawX = (x / w) * displayWidth;
-          const drawY = (y / h) * displayHeight;
-          asciiCtx.fillText(char, drawX, drawY);
+          if (brightness < 0.5) {
+            darkChars.push(char, drawX, drawY);
+          } else {
+            lightChars.push(char, drawX, drawY);
+          }
         }
+        row++;
       }
+      col++;
+    }
+
+    // Draw dark chars
+    asciiCtx.fillStyle = "black";
+    for (let i = 0; i < darkChars.length; i += 3) {
+      asciiCtx.fillText(darkChars[i], darkChars[i + 1], darkChars[i + 2]);
+    }
+
+    // Draw light chars
+    asciiCtx.fillStyle = "#808080";
+    for (let i = 0; i < lightChars.length; i += 3) {
+      asciiCtx.fillText(lightChars[i], lightChars[i + 1], lightChars[i + 2]);
     }
   }
 
@@ -221,22 +261,44 @@ function initScene(selector, options = {}) {
     renderASCII();
   }
 
-  // Resize handling
+  // Resize handling — counter-scale on zoom, real resize on layout change
+  let prevDPR = initDPR;
+
   function handleResize() {
     const { width: w, height: h } = getSize();
     if (w === 0 || h === 0) return;
-    width = w;
-    height = h;
 
-    camera.aspect = width / height;
-    camera.updateProjectionMatrix();
+    const currentDPR = window.devicePixelRatio || 1;
+    const isZoom = Math.abs(currentDPR - prevDPR) > 0.001;
+    prevDPR = currentDPR;
 
-    asciiCanvas.width = width * DPR;
-    asciiCanvas.height = height * DPR;
-    asciiCtx.setTransform(1, 0, 0, 1, 0, 0);
-    asciiCtx.scale(DPR, DPR);
+    if (isZoom) {
+      // Zoom changed — counter-scale ASCII canvas, keep everything else fixed
+      const zoomRatio = initDPR / currentDPR;
+      asciiCanvas.style.transformOrigin = "0 0";
+      asciiCanvas.style.transform = `scale(${zoomRatio})`;
+      asciiCanvas.style.width = `${100 / zoomRatio}%`;
+      asciiCanvas.style.height = `${100 / zoomRatio}%`;
+    } else {
+      // Real layout resize — update renderer + camera, keep aspect from physical pixels
+      width = w;
+      height = h;
 
-    renderer.setSize(width, height);
+      const physW = w * currentDPR;
+      const physH = h * currentDPR;
+
+      camera.aspect = physW / physH;
+      camera.updateProjectionMatrix();
+      renderer.setSize(physW, physH, false);
+
+      asciiCanvas.width = physW;
+      asciiCanvas.height = physH;
+
+      // Reset zoom compensation
+      asciiCanvas.style.transform = "";
+      asciiCanvas.style.width = "100%";
+      asciiCanvas.style.height = "100%";
+    }
   }
 
   new ResizeObserver(handleResize).observe(container);
@@ -250,15 +312,16 @@ function initScene(selector, options = {}) {
 
 // ─── Initialize scenes (EDIT THESE) ─────────────────────────────────────────
 
-initScene("#ascii-scene", {
-  modelUrl: "./cell.glb.txt",
+initScene("#cancer-cell", {
+  modelUrl:
+    "https://cdn.prod.website-files.com/69823aa904992b6320d75fe8/698da57c215254412e7df2b3_cell.glb.txt",
   autoRotate: true,
   rotationSpeed: 0.002,
   backgroundColor: "#ffffff",
   brightness: 0.5,
-  contrast: 1.3,
+  contrast: 1.5,
   asciiResolution: 0.27,
-  asciiFontSize: 22,
+  asciiFontSize: 10,
   asciiCharSet: " .:-=+*#%@",
   circleEnabled: true,
   circleRadius: 0.2,
