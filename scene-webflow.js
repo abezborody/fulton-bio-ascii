@@ -23,7 +23,7 @@
 // ─── Imports from CDN (bundled, no importmap needed) ────────────────────────
 import * as THREE from "https://esm.sh/three@0.160.0?bundle";
 import { GLTFLoader } from "https://esm.sh/three@0.160.0/examples/jsm/loaders/GLTFLoader.js?bundle&deps=three@0.160.0";
-import { LoopSubdivision } from "https://unpkg.com/three-subdivide/build/index.module.js";
+import { LoopSubdivision } from "https://esm.sh/three-subdivide@1.1.3?bundle&deps=three@0.160.0";
 
 // ─── Default parameters ─────────────────────────────────────────────────────
 const DEFAULTS = {
