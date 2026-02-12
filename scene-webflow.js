@@ -113,6 +113,12 @@ function initScene(selector, options = {}) {
   const renderH = fixedRows;
   renderer.setSize(renderW, renderH, false);
 
+  // Fade-in: hide canvas until model is ready, then CSS transition handles it
+  const fadeInDuration = 3; // seconds
+  let modelReady = false;
+  asciiCanvas.style.opacity = "0";
+  asciiCanvas.style.transition = `opacity ${fadeInDuration}s cubic-bezier(0.33, 1, 0.68, 1)`;
+
   // Lighting
   const ambientLight = new THREE.AmbientLight(0xffffff, cfg.brightness);
   scene.add(ambientLight);
@@ -169,6 +175,10 @@ function initScene(selector, options = {}) {
           }
         }
       });
+
+      // Trigger fade-in after model is ready
+      modelReady = true;
+      asciiCanvas.style.opacity = "1";
     },
     (xhr) => {
       if (xhr.total) {
@@ -301,7 +311,7 @@ function initScene(selector, options = {}) {
     }
 
     renderer.render(scene, camera);
-    renderASCII();
+    if (modelReady) renderASCII();
   }
 
   // Pause when off-screen to save GPU/CPU
