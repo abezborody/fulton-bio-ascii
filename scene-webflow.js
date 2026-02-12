@@ -23,6 +23,7 @@
 // ─── Imports from CDN (bundled, no importmap needed) ────────────────────────
 import * as THREE from "https://esm.sh/three@0.160.0?bundle";
 import { GLTFLoader } from "https://esm.sh/three@0.160.0/examples/jsm/loaders/GLTFLoader.js?bundle&deps=three@0.160.0";
+import { LoopSubdivision } from "https://unpkg.com/three-subdivide/build/index.module.js";
 
 // ─── Default parameters ─────────────────────────────────────────────────────
 const DEFAULTS = {
@@ -40,6 +41,7 @@ const DEFAULTS = {
   circleEnabled: true,
   circleRadius: 0.2,
   circleSpeed: (Math.PI * 2) / 8,
+  subdivisionIterations: 2,
 };
 
 // ─── Scene factory (no need to edit) ─────────────────────────────────────────
@@ -151,6 +153,20 @@ function initScene(selector, options = {}) {
         if (child.isMesh) {
           child.castShadow = false;
           child.receiveShadow = false;
+
+          if (cfg.subdivisionIterations > 0 && child.geometry) {
+            child.geometry = LoopSubdivision.modify(
+              child.geometry,
+              cfg.subdivisionIterations,
+              {
+                split: true,
+                uvSmooth: false,
+                preserveEdges: false,
+                flatOnly: false,
+                maxTriangles: Infinity,
+              },
+            );
+          }
         }
       });
     },
@@ -326,7 +342,7 @@ initScene("#cancer-cell", {
   rotationSpeed: 0.002,
   backgroundColor: "#ffffff",
   brightness: 0.5,
-  contrast: 1.5,
+  contrast: 2,
   asciiResolution: 0.27,
   asciiFontSize: 10,
   asciiCharSet: " .:-=+*#%@",
