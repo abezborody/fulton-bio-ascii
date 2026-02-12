@@ -84,8 +84,9 @@ var ASCII_IMG_DEFAULTS = {
   // Colors
   charColor: "#000000",
   bgColor: "#ffffff",
-  // Color palette: "none" (monochrome), "grey2bit", "grey4bit", "grey8bit",
-  //                "color3bit", "color4bit", "color" (full color)
+  transparentBg: false,
+  // Color palette: "none" (monochrome), "opacity" (single color, variable alpha),
+  //   "grey2bit", "grey4bit", "grey8bit", "color3bit", "color4bit", "color" (full)
   colorPalette: "none",
   // Blend factor: 0 = charColor only, 1 = original/palette color, >1 = boosted
   charTint: 1,
@@ -231,12 +232,24 @@ function initAsciiImage(selector, options) {
       : [0, 0, 0];
   }
 
-  function getCharRgba(color) {
+  function getCharRgba(color, brightness) {
     var palette = cfg.colorPalette;
     var tint = cfg.charTint;
-    var r, g, b;
+    var r,
+      g,
+      b,
+      a = 1;
 
-    if (palette === "color") {
+    if (palette === "opacity") {
+      // Single charColor, alpha derived from pixel brightness
+      var base = hexToRgb(cfg.charColor);
+      r = base[0];
+      g = base[1];
+      b = base[2];
+      // brightness 0 = darkest pixel → full opacity, 1 = lightest → half opacity
+      a = Math.max(0.2, Math.min(1, 1 - brightness * 0.9));
+      return [r, g, b, a];
+    } else if (palette === "color") {
       // Full color — use pixel color directly
       r = color[3] > 0 ? color[0] : 255;
       g = color[3] > 0 ? color[1] : 255;
@@ -272,7 +285,7 @@ function initAsciiImage(selector, options) {
       b = Math.min(255, Math.floor(b * tint + base[2] * (1 - tint)));
     }
 
-    return [r, g, b];
+    return [r, g, b, a];
   }
 
   // ── Image loading & pixel processing ─────────────────────────────────────
@@ -408,8 +421,10 @@ function initAsciiImage(selector, options) {
     ctx.clearRect(0, 0, neededW, neededH);
 
     // Background
-    ctx.fillStyle = cfg.bgColor;
-    ctx.fillRect(0, 0, neededW, neededH);
+    if (!cfg.transparentBg) {
+      ctx.fillStyle = cfg.bgColor;
+      ctx.fillRect(0, 0, neededW, neededH);
+    }
 
     // Font
     ctx.font = "500 " + cellSize + "px 'Courier New', monospace";
@@ -426,10 +441,22 @@ function initAsciiImage(selector, options) {
         var char = getClosestChar(values);
         if (char !== " ") {
           if (!isMonochrome) {
-            var rgba = getCharRgba(colorMap[index]);
+            // Average normalized value as brightness for opacity mode
+            var br = 0;
+            for (var vi = 0; vi < values.length; vi++) br += values[vi];
+            br = br / values.length;
+            var rgba = getCharRgba(colorMap[index], br);
             if (rgba) {
               ctx.fillStyle =
-                "rgb(" + rgba[0] + "," + rgba[1] + "," + rgba[2] + ")";
+                "rgba(" +
+                rgba[0] +
+                "," +
+                rgba[1] +
+                "," +
+                rgba[2] +
+                "," +
+                rgba[3] +
+                ")";
             }
           }
           ctx.fillText(char, cellX * cellSize, cellY * cellSize);
@@ -492,17 +519,18 @@ function initAsciiImage(selector, options) {
 // ─── Initialize (EDIT THESE) ─────────────────────────────────────────────────
 
 initAsciiImage("#ascii-image", {
-  imageUrl: "/photo_2026-02-06_13-37-40.jpg",
-  size: 60,
-  brightness: 0.5,
-  contrast: 1.2,
+  imageUrl: "/fulton-image.png",
+  size: 80,
+  brightness: 1.3,
+  contrast: 1.6,
   charColor: "#ffffff",
   // bgColor: "#ffffff",
   bgColor: "#132F25",
-  colorPalette: "none",
+  colorPalette: "color",
   charTint: 1,
+  // transparentBg: false,
   animationEnabled: true,
   animationDuration: 10000,
-  brightnessMin: -0.2,
-  brightnessMax: 0.5,
+  brightnessMin: -0.1,
+  brightnessMax: 0.8,
 });
