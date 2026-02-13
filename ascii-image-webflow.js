@@ -539,8 +539,8 @@ function initAsciiImage(selector, options) {
 //   initAsciiImage(selector, {
 //     imageUrl: imageUrl,
 //     size: 80,
-//     brightness: 1.3,
-//     contrast: 1.6,
+//   brightness: -0.4,
+//   contrast: 0,
 //     charColor: "#ffffff",
 //     // bgColor: "#ffffff",
 //     bgColor: "#132F25",
@@ -549,7 +549,27 @@ function initAsciiImage(selector, options) {
 //     // transparentBg: false,
 //     animationEnabled: true,
 //     animationDuration: 10000,
-//     brightnessMin: -0.1,
-//     brightnessMax: 0.8,
+//   brightnessMin: -0.4,
+//   brightnessMax: 0,
 //   });
+// });
+
+// Color palette: "none" (monochrome), "opacity" (single color, variable alpha),
+// "grey2bit", "grey4bit", "grey8bit", "color3bit", "color4bit", "color" (full)
+
+// initAsciiImage("#ascii-image", {
+//   imageUrl: "/product-1.png",
+//   size: 120,
+//   brightness: -0.4,
+//   contrast: 0,
+//   charColor: "#ffffff",
+//   // bgColor: "#ffffff",
+//   bgColor: "#132F25",
+//   colorPalette: "opacity-inverse",
+//   charTint: 1,
+//   transparentBg: false,
+//   animationEnabled: true,
+//   animationDuration: 10000,
+//   brightnessMin: -0.4,
+//   brightnessMax: 0,
 // });
