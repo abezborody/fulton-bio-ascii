@@ -88,8 +88,8 @@ var ASCII_IMG_DEFAULTS = {
   // Color palette: "none" (monochrome), "opacity" (single color, variable alpha),
   //   "grey2bit", "grey4bit", "grey8bit", "color3bit", "color4bit", "color" (full)
   colorPalette: "none",
-  // Blend factor: 0 = charColor only, 1 = original/palette color, >1 = boosted
-  charTint: 1,
+  // Thickness: 100-900 (400=normal, 700=bold)
+  fontWeight: 600,
   // Looping brightness animation
   animationEnabled: true,
   animationDuration: 10000, // ms for one full sine cycle
@@ -247,8 +247,14 @@ function initAsciiImage(selector, options) {
       r = base[0];
       g = base[1];
       b = base[2];
-      // Higher minimum opacity (0.6), smaller range (0.4) = less pale, more solid chars
-      a = Math.max(0.6, Math.min(1, 1 - brightness * 0.4));
+      // Minimum opacity (0.5), range (0.5) = visible variation but not too pale
+      a = Math.max(0.5, Math.min(1, 1 - brightness * 0.5));
+      // Apply charTint blending for opacity mode
+      if (tint !== 1) {
+        r = Math.min(255, Math.floor(r * tint + base[0] * (1 - tint)));
+        g = Math.min(255, Math.floor(g * tint + base[1] * (1 - tint)));
+        b = Math.min(255, Math.floor(b * tint + base[2] * (1 - tint)));
+      }
       return [r, g, b, a];
     } else if (palette === "opacity-inverse") {
       // Single charColor, INVERTED alpha for dark backgrounds
@@ -256,8 +262,14 @@ function initAsciiImage(selector, options) {
       r = base[0];
       g = base[1];
       b = base[2];
-      // Higher minimum opacity (0.6), smaller range (0.4) = less pale, more solid chars
-      a = Math.max(0.6, Math.min(1, 0.6 + brightness * 0.4));
+      // Minimum opacity (0.5), range (0.5) = visible variation but not too pale
+      a = Math.max(0.5, Math.min(1, 0.5 + brightness * 0.5));
+      // Apply charTint blending for opacity-inverse mode
+      if (tint !== 1) {
+        r = Math.min(255, Math.floor(r * tint + base[0] * (1 - tint)));
+        g = Math.min(255, Math.floor(g * tint + base[1] * (1 - tint)));
+        b = Math.min(255, Math.floor(b * tint + base[2] * (1 - tint)));
+      }
       return [r, g, b, a];
     } else if (palette === "color") {
       // Full color — use pixel color directly
@@ -437,7 +449,7 @@ function initAsciiImage(selector, options) {
     }
 
     // Font
-    ctx.font = "500 " + cellSize + "px 'Courier New', monospace";
+    ctx.font = cfg.fontWeight + " " + cellSize + "px 'Courier New', monospace";
     ctx.textBaseline = "top";
 
     var isMonochrome = cfg.colorPalette === "none";
@@ -567,7 +579,7 @@ function initAsciiImage(selector, options) {
 //   // bgColor: "#ffffff",
 //   bgColor: "#132F25",
 //   colorPalette: "opacity-inverse",
-//   charTint: 1,
+//   charTint: 0,
 //   transparentBg: false,
 //   animationEnabled: true,
 //   animationDuration: 10000,
