@@ -520,27 +520,27 @@ function initAsciiImage(selector, options) {
 
 // ─── Initialize (EDIT THESE) ─────────────────────────────────────────────────
 
-const images = {
-  "#product-1": "url",
-  "#product-2": "url",
-  "#product-3": "url",
-};
+// const images = {
+//   "#product-1": "url",
+//   "#product-2": "url",
+//   "#product-3": "url",
+// };
 
-Object.entries(images).forEach(([selector, imageUrl]) => {
-  initAsciiImage(selector, {
-    imageUrl: imageUrl,
-    size: 80,
-    brightness: 1.3,
-    contrast: 1.6,
-    charColor: "#ffffff",
-    // bgColor: "#ffffff",
-    bgColor: "#132F25",
-    colorPalette: "color",
-    charTint: 1,
-    // transparentBg: false,
-    animationEnabled: true,
-    animationDuration: 10000,
-    brightnessMin: -0.1,
-    brightnessMax: 0.8,
-  });
-});
+// Object.entries(images).forEach(([selector, imageUrl]) => {
+//   initAsciiImage(selector, {
+//     imageUrl: imageUrl,
+//     size: 80,
+//     brightness: 1.3,
+//     contrast: 1.6,
+//     charColor: "#ffffff",
+//     // bgColor: "#ffffff",
+//     bgColor: "#132F25",
+//     colorPalette: "color",
+//     charTint: 1,
+//     // transparentBg: false,
+//     animationEnabled: true,
+//     animationDuration: 10000,
+//     brightnessMin: -0.1,
+//     brightnessMax: 0.8,
+//   });
+// });
