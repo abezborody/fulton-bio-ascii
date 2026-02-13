@@ -1,4 +1,4 @@
-/*
+/* TEST
  * Fulton ASCII Image Effect — Webflow embed
  * Canvas-based renderer with looping brightness animation.
  *
