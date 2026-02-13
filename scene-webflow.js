@@ -42,7 +42,7 @@ const DEFAULTS = {
   circleEnabled: true,
   circleRadius: 0.2,
   circleSpeed: (Math.PI * 2) / 8,
-  subdivisionIterations: 2,
+  subdivisionIterations: 0,
 };
 
 // ─── Scene factory (no need to edit) ─────────────────────────────────────────
@@ -94,7 +94,7 @@ function initScene(selector, options = {}) {
   const asciiCanvas = document.createElement("canvas");
   const asciiCtx = asciiCanvas.getContext("2d");
   asciiCanvas.style.position = "absolute";
-  asciiCanvas.style.top = "15%";
+  asciiCanvas.style.top = "8%";
   asciiCanvas.style.left = "30%";
   asciiCanvas.style.width = "100%";
   asciiCanvas.style.height = "100%";
