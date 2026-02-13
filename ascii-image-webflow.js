@@ -246,8 +246,8 @@ function initAsciiImage(selector, options) {
       r = base[0];
       g = base[1];
       b = base[2];
-      // brightness 0 = darkest pixel → full opacity, 1 = lightest → half opacity
-      a = Math.max(0.2, Math.min(1, 1 - brightness * 0.9));
+      // Higher minimum opacity (0.5), smaller range (0.5) = less pale, more solid chars
+      a = Math.max(0.5, Math.min(1, 1 - brightness * 0.5));
       return [r, g, b, a];
     } else if (palette === "opacity-inverse") {
       // Single charColor, INVERTED alpha for dark backgrounds
@@ -255,8 +255,8 @@ function initAsciiImage(selector, options) {
       r = base[0];
       g = base[1];
       b = base[2];
-      // brightness 0 = darkest pixel → low opacity, 1 = lightest → full opacity
-      a = Math.max(0.2, Math.min(1, 0.2 + brightness * 0.8));
+      // Higher minimum opacity (0.5), smaller range (0.5) = less pale, more solid chars
+      a = Math.max(0.5, Math.min(1, 0.5 + brightness * 0.5));
       return [r, g, b, a];
     } else if (palette === "color") {
       // Full color — use pixel color directly
