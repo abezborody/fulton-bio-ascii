@@ -28,11 +28,12 @@
 
   // ─── Dynamic script loader ──────────────────────────────────────────────────
 
-  // Single combined URL — jsdelivr merges both files into one HTTP request
+  // Single combined URL — jsdelivr merges files into one HTTP request
   var THREE_COMBINED_URL =
     "https://cdn.jsdelivr.net/combine/" +
     "npm/three@0.147.0/build/three.min.js," +
-    "npm/three@0.147.0/examples/js/loaders/GLTFLoader.js";
+    "npm/three@0.147.0/examples/js/loaders/GLTFLoader.js," +
+    "npm/three@0.147.0/examples/js/loaders/DRACOLoader.js";
 
   // Preload removed — it competes for bandwidth and doesn't help with cross-origin
   // THREE.js will be fetched only when THREEJSASCII.load() is called
@@ -1018,6 +1019,9 @@
 
     // Model
     var loader = new THREE.GLTFLoader();
+    var dracoLoader = new THREE.DRACOLoader();
+    dracoLoader.setDecoderPath("https://www.gstatic.com/draco/v1/decoders/");
+    loader.setDRACOLoader(dracoLoader);
     var model = null;
 
     loader.load(

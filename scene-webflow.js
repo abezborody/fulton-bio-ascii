@@ -23,6 +23,7 @@
 // ─── Imports from CDN (bundled, no importmap needed) ────────────────────────
 import * as THREE from "https://esm.sh/three@0.160.0?bundle";
 import { GLTFLoader } from "https://esm.sh/three@0.160.0/examples/jsm/loaders/GLTFLoader.js?bundle&deps=three@0.160.0";
+import { DRACOLoader } from "https://esm.sh/three@0.160.0/examples/jsm/loaders/DRACOLoader.js?bundle&deps=three@0.160.0";
 import { LoopSubdivision } from "https://esm.sh/three-subdivide@1.1.3?bundle&deps=three@0.160.0";
 
 // ─── Default parameters ─────────────────────────────────────────────────────
@@ -138,6 +139,9 @@ function initScene(selector, options = {}) {
 
   // Model
   const loader = new GLTFLoader();
+  const dracoLoader = new DRACOLoader();
+  dracoLoader.setDecoderPath("https://www.gstatic.com/draco/v1/decoders/");
+  loader.setDRACOLoader(dracoLoader);
   let model = null;
 
   loader.load(
