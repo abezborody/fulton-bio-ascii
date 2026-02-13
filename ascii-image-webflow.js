@@ -93,6 +93,7 @@ var ASCII_IMG_DEFAULTS = {
   // Looping brightness animation
   animationEnabled: true,
   animationDuration: 10000, // ms for one full sine cycle
+  animationPhase: Math.PI / 2, // Phase offset in radians (0 = start at min, Math.PI = start at max, Math.PI/2 = start at middle)
   brightnessMin: -0.2,
   brightnessMax: 0.5,
   // Fade-in after image loads
@@ -246,8 +247,8 @@ function initAsciiImage(selector, options) {
       r = base[0];
       g = base[1];
       b = base[2];
-      // Higher minimum opacity (0.5), smaller range (0.5) = less pale, more solid chars
-      a = Math.max(0.5, Math.min(1, 1 - brightness * 0.5));
+      // Higher minimum opacity (0.6), smaller range (0.4) = less pale, more solid chars
+      a = Math.max(0.6, Math.min(1, 1 - brightness * 0.4));
       return [r, g, b, a];
     } else if (palette === "opacity-inverse") {
       // Single charColor, INVERTED alpha for dark backgrounds
@@ -255,8 +256,8 @@ function initAsciiImage(selector, options) {
       r = base[0];
       g = base[1];
       b = base[2];
-      // Higher minimum opacity (0.5), smaller range (0.5) = less pale, more solid chars
-      a = Math.max(0.5, Math.min(1, 0.5 + brightness * 0.5));
+      // Higher minimum opacity (0.6), smaller range (0.4) = less pale, more solid chars
+      a = Math.max(0.6, Math.min(1, 0.6 + brightness * 0.4));
       return [r, g, b, a];
     } else if (palette === "color") {
       // Full color — use pixel color directly
@@ -492,7 +493,7 @@ function initAsciiImage(selector, options) {
       if (!animStartTime) animStartTime = now;
       var elapsed = now - animStartTime;
       var progress = (elapsed % cfg.animationDuration) / cfg.animationDuration;
-      var sineValue = Math.sin(progress * Math.PI * 2);
+      var sineValue = Math.sin(progress * Math.PI * 2 + cfg.animationPhase);
       brightnessOffset =
         cfg.brightnessMin +
         ((sineValue + 1) / 2) * (cfg.brightnessMax - cfg.brightnessMin);
