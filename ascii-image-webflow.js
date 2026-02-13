@@ -249,6 +249,15 @@ function initAsciiImage(selector, options) {
       // brightness 0 = darkest pixel → full opacity, 1 = lightest → half opacity
       a = Math.max(0.2, Math.min(1, 1 - brightness * 0.9));
       return [r, g, b, a];
+    } else if (palette === "opacity-inverse") {
+      // Single charColor, INVERTED alpha for dark backgrounds
+      var base = hexToRgb(cfg.charColor);
+      r = base[0];
+      g = base[1];
+      b = base[2];
+      // brightness 0 = darkest pixel → low opacity, 1 = lightest → full opacity
+      a = Math.max(0.2, Math.min(1, 0.2 + brightness * 0.8));
+      return [r, g, b, a];
     } else if (palette === "color") {
       // Full color — use pixel color directly
       r = color[3] > 0 ? color[0] : 255;
