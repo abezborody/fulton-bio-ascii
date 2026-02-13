@@ -439,7 +439,9 @@ function initAsciiImage(selector, options) {
         var index = cellX + cellY * imgWidth;
         var values = normalizedMap[index];
         var char = getClosestChar(values);
-        if (char !== " ") {
+        var color = colorMap[index];
+        // Skip transparent pixels (alpha < 10)
+        if (char !== " " && color[3] >= 10) {
           if (!isMonochrome) {
             // Average normalized value as brightness for opacity mode
             var br = 0;
@@ -518,19 +520,27 @@ function initAsciiImage(selector, options) {
 
 // ─── Initialize (EDIT THESE) ─────────────────────────────────────────────────
 
-initAsciiImage("#ascii-image", {
-  imageUrl: "/fulton-image.png",
-  size: 80,
-  brightness: 1.3,
-  contrast: 1.6,
-  charColor: "#ffffff",
-  // bgColor: "#ffffff",
-  bgColor: "#132F25",
-  colorPalette: "color",
-  charTint: 1,
-  // transparentBg: false,
-  animationEnabled: true,
-  animationDuration: 10000,
-  brightnessMin: -0.1,
-  brightnessMax: 0.8,
+const images = {
+  "#product-1": "url",
+  "#product-2": "url",
+  "#product-3": "url",
+};
+
+Object.entries(images).forEach(([selector, imageUrl]) => {
+  initAsciiImage(selector, {
+    imageUrl: imageUrl,
+    size: 80,
+    brightness: 1.3,
+    contrast: 1.6,
+    charColor: "#ffffff",
+    // bgColor: "#ffffff",
+    bgColor: "#132F25",
+    colorPalette: "color",
+    charTint: 1,
+    // transparentBg: false,
+    animationEnabled: true,
+    animationDuration: 10000,
+    brightnessMin: -0.1,
+    brightnessMax: 0.8,
+  });
 });
